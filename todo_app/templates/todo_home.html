@@ -115,15 +115,7 @@
   // }
 
   var todoStorage = {
-    todos: [
-      {% for item in todo_items %}
-        {
-          title: "{{ item.title }}",
-          completed: {% if item.completed %}true{% else %}false{% endif %},
-          id: {{ item.id }}
-        }{% if not forloop.last %},{% endif %}
-      {% endfor %}
-    ],
+    todos: {{ todo_items|safe }},
     fetch: function() {
       return this.todos;
     },
@@ -135,6 +127,12 @@
           "X-CSRFToken": document.querySelector('input[name="csrfmiddlewaretoken"]').value
         },
         body: JSON.stringify(this.todos)
+      }).then(function(response) {
+        return response.json()
+      }).then(function(json) {
+        this.todos = json.todo_items
+      }).catch(function(ex) {
+        console.log('Save error:', ex)
       })
     }
   }
