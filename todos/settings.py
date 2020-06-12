@@ -25,7 +25,9 @@ SECRET_KEY = '8s*s9=r@dnp07+m6mu#jg)@m0!lmlwk)a#4-$qe35f))czpmob'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'a99.cc',
+]
 
 
 # Application definition
