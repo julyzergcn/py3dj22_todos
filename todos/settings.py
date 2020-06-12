@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'a99.cc',
+    '192.168.9.99',
 ]
 
 
