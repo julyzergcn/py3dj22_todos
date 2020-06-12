@@ -47,7 +47,7 @@ body {
 
 .todoapp {
 	background: #fff;
-	margin: 100px 0 40px 0;
+	margin: 108px 0 40px 0;
 	position: relative;
 	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2),
 	            0 25px 50px 0 rgba(0, 0, 0, 0.1);
@@ -73,7 +73,7 @@ body {
 
 .todoapp h1 {
 	position: absolute;
-	top: -125px;
+	top: -133px;
 	width: 100%;
 	font-size: 83px;
 	font-weight: 100;
@@ -185,6 +185,7 @@ body {
 }
 
 .todo-list li .toggle {
+	cursor: pointer;
 	text-align: center;
 	width: 40px;
 	/* auto, since non-WebKit browsers doesn't support input styling */
