@@ -16,8 +16,13 @@ def home(request):
                 item_objs.append(
                     models.TodoItem(title=item['title'], completed=item['completed'])
                 )
+                continue
             ids.append(item['id'])
-        models.TodoItem.objects.filter(deleted=False).exclude(id__in=ids).update(deleted=True)
+            models.TodoItem.objects.filter(id=item['id'])\
+                .update(title=item['title'], completed=item['completed'])
+
+        models.TodoItem.objects.filter(deleted=False)\
+            .exclude(id__in=ids).update(deleted=True)
         models.TodoItem.objects.bulk_create(item_objs)
         return JsonResponse({'ret': 'ok'})
 
