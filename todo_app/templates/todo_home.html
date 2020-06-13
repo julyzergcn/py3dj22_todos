@@ -34,7 +34,7 @@
           :class="{ completed: todo.completed, editing: todo == editedTodo }"
         >
           <div class="view">
-            <input class="toggle" type="checkbox" v-model="todo.completed" />
+            <input class="toggle" type="checkbox" v-model="todo.completed" @click="toggleCompleted(todo)" />
             <label @dblclick="editTodo(todo)">{{ todo.title }}</label>
             <button class="destroy" @click="removeTodo(todo)"></button>
           </div>
@@ -88,51 +88,56 @@
 {% block js %}
 <div style="display:none">{% csrf_token %}</div>
 <script>
-  // localStorage persistence
-  // var STORAGE_KEY = "todos-vuejs-2.0";
-  // var todoStorage = {
-  //   fetch: function() {
-  //     var todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  //     todos.forEach(function(todo, index) {
-  //       todo.id = index;
-  //     });
-  //     todoStorage.uid = todos.length;
-  //     return todos;
-  //   },
-  //   save: function(todos) {
-  //     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-  //   }
-  // };
 
-  // var todoStorage = {
-  //   todos: [],
-  //   fetch: function() {
-  //     return this.todos;
-  //   },
-  //   save: function(todos) {
-  //     this.todos = todos;
-  //   }
-  // }
+  var request = {
+    post: function(url, data) {
+      return new Promise((resolve, reject) => {
+        fetch(url, {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            "X-CSRFToken": document.querySelector('input[name="csrfmiddlewaretoken"]').value
+          },
+          body: JSON.stringify(data)
+        }).then(response => {
+          return response.json()
+        }).then(json => {
+          resolve(json)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    }
+  }
 
   var todoStorage = {
     todos: {{ todo_items|safe }},
+    url: "{% url 'todo_home' %}",
     fetch: function() {
       return this.todos;
     },
-    save: function(todos) {
-      fetch("{% url 'todo_home' %}", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          "X-CSRFToken": document.querySelector('input[name="csrfmiddlewaretoken"]').value
-        },
-        body: JSON.stringify(this.todos)
-      }).then(function(response) {
-        return response.json()
-      }).then(function(json) {
-        this.todos = json.todo_items
-      }).catch(function(ex) {
-        console.log('Save error:', ex)
+    add: function(todo) {
+      return new Promise((resolve, reject) => {
+        request.post(this.url + "?_action=add_todo", todo).then(json => {
+          this.todos = json.todos;
+          resolve(json)
+        })
+      })
+    },
+    remove: function(todos) {
+      return new Promise((resolve, reject) => {
+        request.post(this.url + "?_action=remove_todos", todos).then(json => {
+          this.todos = json.todos;
+          resolve(json)
+        })
+      })
+    },
+    edit: function(todo) {
+      return new Promise((resolve, reject) => {
+        request.post(this.url + "?_action=edit_todo", todo).then(json => {
+          this.todos = json.todos;
+          resolve(json)
+        })
       })
     }
   }
@@ -162,14 +167,14 @@
       visibility: "all"
     },
 
-    watch: {
-      todos: {
-        handler: function(todos) {
-          todoStorage.save(todos);
-        },
-        deep: true
-      }
-    },
+    // watch: {
+    //   todos: {
+    //     handler: function(todos) {
+    //       todoStorage.save(todos);
+    //     },
+    //     deep: true
+    //   }
+    // },
 
     computed: {
       filteredTodos: function() {
@@ -185,6 +190,7 @@
         set: function(value) {
           this.todos.forEach(function(todo) {
             todo.completed = value;
+            todoStorage.edit(todo);
           });
         }
       }
@@ -202,16 +208,21 @@
         if (!value) {
           return;
         }
-        this.todos.push({
-          id: todoStorage.uid++,
+        todoStorage.add({
+          id: null,
           title: value,
           completed: false
+        }).then(json => {
+          this.todos = json.todos
         });
         this.newTodo = "";
       },
 
       removeTodo: function(todo) {
-        this.todos.splice(this.todos.indexOf(todo), 1);
+        // this.todos.splice(this.todos.indexOf(todo), 1);
+        todoStorage.remove([todo]).then(json => {
+          this.todos = json.todos
+        });
       },
 
       editTodo: function(todo) {
@@ -228,6 +239,11 @@
         if (!todo.title) {
           this.removeTodo(todo);
         }
+        else {
+          todoStorage.edit(todo).then(json => {
+            this.todos = json.todos
+          });
+        }
       },
 
       cancelEdit: function(todo) {
@@ -236,7 +252,15 @@
       },
 
       removeCompleted: function() {
-        this.todos = filters.active(this.todos);
+        // this.todos = filters.active(this.todos);
+        todoStorage.remove(filters.completed(this.todos)).then(json => {
+          this.todos = json.todos
+        });
+      },
+
+      toggleCompleted: function(todo) {
+        todo.completed = !todo.completed;
+        todoStorage.edit(todo);
       }
     },
 

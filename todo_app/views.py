@@ -21,23 +21,18 @@ def get_todo_items():
 def home(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        ids = []
-        item_objs = []
-        for item in data:
-            if item['id'] is None:
-                item_objs.append(
-                    models.TodoItem(title=item['title'], completed=item['completed'])
-                )
-                continue
-            ids.append(item['id'])
-            models.TodoItem.objects.filter(id=item['id'])\
-                .update(title=item['title'], completed=item['completed'])
+        _action = request.GET.get('_action')
+        if _action == 'add_todo':
+            models.TodoItem.objects.create(
+                title=data['title'], completed=data['completed'])
+        elif _action == 'remove_todos':
+            models.TodoItem.objects.filter(
+                id__in=[item['id'] for item in data]).update(deleted=True)
+        elif _action == 'edit_todo':
+            models.TodoItem.objects.filter(id=data['id']).update(
+                title=data['title'], completed=data['completed'])
 
-        models.TodoItem.objects.filter(deleted=False)\
-            .exclude(id__in=ids).update(deleted=True)
-        models.TodoItem.objects.bulk_create(item_objs)
-
-        return JsonResponse({'todo_items': get_todo_items()})
+        return JsonResponse({'todos': get_todo_items()})
 
     context = {
         'todo_items': json.dumps(get_todo_items()),
