@@ -2,6 +2,7 @@ import json
 
 from django.shortcuts import render
 from django.http.response import JsonResponse
+from django.core.serializers.json import DjangoJSONEncoder
 
 from . import models
 
@@ -13,6 +14,7 @@ def get_todo_items():
             'id': obj.id,
             'title': obj.title,
             'completed': obj.completed,
+            'created_at': obj.created_at.date(),
         }
         for obj in qs
     ]
@@ -35,7 +37,7 @@ def home(request):
         return JsonResponse({'todos': get_todo_items()})
 
     context = {
-        'todo_items': json.dumps(get_todo_items()),
+        'todo_items': json.dumps(get_todo_items(), cls=DjangoJSONEncoder),
     }
 
     return render(request, 'todo_home.html', context)
