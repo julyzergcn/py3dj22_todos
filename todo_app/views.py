@@ -9,6 +9,7 @@ from . import models
 
 def get_todo_items():
     qs = models.TodoItem.objects.filter(deleted=False)
+    qs = qs.order_by('-created_at')
     return [
         {
             'id': obj.id,
