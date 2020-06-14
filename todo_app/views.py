@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.http.response import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
 
-from . import models
+from . import models, forms
 
 
 def get_todo_items():
@@ -25,15 +25,15 @@ def home(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         _action = request.GET.get('_action')
-        if _action == 'add_todo':
-            models.TodoItem.objects.create(
-                title=data['title'], completed=data['completed'])
+        if _action in ('add_todo', 'edit_todo'):
+            form = forms.TodoItemForm(data)
+            if form.is_valid():
+                form.save()
+            # else:
+            #     print('---', form.errors)
         elif _action == 'remove_todos':
             models.TodoItem.objects.filter(
                 id__in=[item['id'] for item in data]).update(deleted=True)
-        elif _action == 'edit_todo':
-            models.TodoItem.objects.filter(id=data['id']).update(
-                title=data['title'], completed=data['completed'])
 
         return JsonResponse({'todos': get_todo_items()})
 
